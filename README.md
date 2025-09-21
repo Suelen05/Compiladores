@@ -8,23 +8,25 @@ A atividade não é apenas técnica: deve-se também explicar o processo de dese
 
 ## Competências Desenvolvidas
 
-Identificar e classificar símbolos léxicos em programas.
+Identificar e classificar símbolos léxicos em programas. ✔️
 
 Utilizar expressões regulares ou regras definidas manualmente para descrever padrões léxicos.
 
-Implementar um analisador léxico funcional com suporte a identificadores, números, operadores e strings.
+Implementar um analisador léxico funcional com suporte a identificadores ✔️, números ✔️, operadores ✔️ e strings ✔️.
 
 Explicar decisões técnicas e dificuldades encontradas no processo de implementação.
+
+> escolher os tokens
 
 Desenvolver habilidades de comunicação.
 
 Os alunos devem construir um analisador léxico simples para uma mini linguagem de programação. Esse analisador deve reconhecer os seguintes elementos básicos:
 
-- **Identificadores:** nomes de variáveis ou funções.
-- **Números:** inteiros ou decimais.
-- **Palavras-chave:** como `if`, `else`, `while`.
+- **Identificadores:** nomes de variáveis ou funções .
+- **Números:** inteiros ou decimais ✔️.
+- **Palavras-chave:** como `if`, `else`, `while` ✔️.
 - **Operadores:** como `+`, `-`, `*`, `/`, `=`.
-- **Strings literais:** textos entre aspas, como "Olá mundo".
+- **Strings literais:** textos entre aspas, como "Olá mundo" ✔️.
 
 A implementação será dividida em cinco etapas. O objetivo é não apenas programar, mas também explicar o raciocínio utilizado, documentando o processo em slides e vídeo.
 
@@ -43,7 +45,7 @@ Escrever expressões regulares que descrevem esses padrões.
 
 Testar manualmente quais cadeias são aceitas ou rejeitadas.
 
-**Exemplo**
+### Exemplo
 
 Expressão regular para identificadores em Java:
 
@@ -53,7 +55,8 @@ Expressão regular para identificadores em Java:
 [a-zA-Z_][a-zA-Z0-9_]*
 
 ```
-- Cadeias válidas: `var1`, `_contador`, `x`.
+
+- Cadeias válidas: `var1`,`_contador`, `x`.
 - Cadeias inválidas: `1abc`, `@nome`.
 
 ## Etapa 2 – Scanner Simples com Retorno de Inteiros
@@ -170,3 +173,16 @@ Detectar erros como “Olá mundo (string sem aspas finais).
   - Diferença entre reconhecer if como palavra-chave ou identificador.
   - Comentários sobre modularização e estados.
 
+---
+
+# Task List
+
+[ ] Etapa 1 – Identificação de Tokens com Expressões Regulares
+
+[ ] Etapa 2 – Scanner Simples com Retorno de Inteiros
+
+[ ] Etapa 3 – Classe Token com Informações Detalhadas
+
+[ ] Etapa 4 – Uso de Macros e Modularização
+
+[ ] Etapa 5 – Reconhecimento de Strings Literais com Estados
