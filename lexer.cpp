@@ -251,7 +251,7 @@ public:
 
         // Operadores boleanos(duplos): ==, !=, <=, >=
         if ((c == '=' && peek() == '=') || (c == '!' && peek() == '=') ||
-            (c == '<' && peek() == '=') || (c == '>' && peek() == '=')
+            (c == '<' && peek() == '=') || (c == '>' && peek() == '=') ||
             (c == '&' && peek() == '&') || (c == '|' && peek() == '|')) {
 
             string lex;
