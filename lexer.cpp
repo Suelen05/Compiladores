@@ -249,9 +249,10 @@ public:
             return Token(TokenType::COMMENT, lex, tokLine, tokCol);             // retorna token comentário
         }
 
-        // Operadores booleanos(duplos): ==, !=, <=, >=
+        // Operadores boleanos(duplos): ==, !=, <=, >=
         if ((c == '=' && peek() == '=') || (c == '!' && peek() == '=') ||
-            (c == '<' && peek() == '=') || (c == '>' && peek() == '=')) {
+            (c == '<' && peek() == '=') || (c == '>' && peek() == '=')
+            (c == '&' && peek() == '&') || (c == '|' && peek() == '|')) {
 
             string lex;
             lex.push_back(c);                                               // adiciona o primeiro caractere
