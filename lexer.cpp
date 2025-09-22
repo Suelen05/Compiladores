@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <algorithm>
+#include <cctype> 
 using namespace std;
 
 // Definição dos tipos de tokens
@@ -31,22 +31,22 @@ struct Token {
         
         auto tt = [](TokenType t){  
             switch(t){
-                case TokenType::IDENTIFIER: return "IDENTIFIER"; 
-                case TokenType::NUMBER:     return "NUMBER";
+                case TokenType::IDENTIFIER: return "IDENTIFICADOR"; 
+                case TokenType::NUMBER:     return "NUMERO";
                 case TokenType::STRING:     return "STRING";
                 case TokenType::KEYWORD:    return "KEYWORD";
-                case TokenType::OPERATOR:   return "OPERATOR";
-                case TokenType::PUNCTUATION:return "PUNCTUATION";
-                case TokenType::END_OF_FILE:return "EOF";
+                case TokenType::OPERATOR:   return "OPERADOR";
+                case TokenType::PUNCTUATION:return "PONTUACAO";
+                case TokenType::END_OF_FILE:return "FIM DE ARQUIVO";
                 case TokenType::UNKNOWN:    return "UNKNOWN";
-                case TokenType::COMMENT:    return "COMMENT";
+                case TokenType::COMMENT:    return "COMMENTARIO";
             }
             return "TOKEN"; // caso não ocorra (precaução)
         };
 
         // Retorna a representação em string do token
         // exemplo: IDENTIFIER -> "nomeVariavel" [linha,coluna]
-        return tt(tipo) + " -> \"" + texto + "\" [" + to_string(linha) + "," + to_string(coluna) + "]";
+        return string(tt(tipo)) + " -> \"" + texto + "\" [" + to_string(linha) + "," + to_string(coluna) + "]";
     }
 };
 
@@ -90,13 +90,14 @@ unordered_set<string> keywords = {
     "this",
     "super",
     "import",
-    "package"
+    "package",
+    "include"
 };
 
     // Retorna o próximo caractere avançar no indice
     char peek(size_t k=0) const { 
         if (i + k >= src.size()) return '\0';   // se passou do fim, retorna NULL
-        return src[i + k];                      // retorna o caractere atual + k
+        return src.at(i + k);                   // retorna o caractere atual + k
 
     }
 
@@ -211,17 +212,17 @@ public:
         // Strings 
         if (c == '"') {
             string lex;                 
-            lex.push_back(c);           // adiciona a aspa inicial
-            bool closed = false;        // flag para fechar string
+            lex.push_back(c);               // adiciona a aspa inicial
+            bool closed = false;            // flag para fechar string
 
-            while (true) {              // consome o resto da string
-                char p = get();         // consome o próximo caractere
+            while (true) {                  // consome o resto da string
+                char p = get();             // consome o próximo caractere
 
-                if (p == '\0') break;   // se for fim de arquivo, termina
+                if (p == '\0') break;       // se for fim de arquivo, termina
 
-                lex.push_back(p);       // se não adiciona o caractere na string
+                lex.push_back(p);           // se não adiciona o caractere na string
 
-                if (p == '\\') {        // escape sequence
+                if (p == '\\') {            // escape sequence
                     
                     char nxt = get();   
                     if (nxt == '\0') break; // se for fim de arquivo, termina
@@ -239,60 +240,84 @@ public:
             return Token(TokenType::STRING, lex, tokLine, tokCol);  // retorna token string
         }
 
-        // Comments: single-line //
-        if (c == '/' && peek() == '/') {
-            string lex;
-            lex.push_back(c);
-            lex.push_back(get()); // consume second '/'
-            while (peek() != '\n' && peek() != '\0') lex.push_back(get());
-            return Token(TokenType::COMMENT, lex, tokLine, tokCol);
+        // Comentários de linha: // comentário
+        if (c == '/' && peek() == '/') {                                        // se encontrar //(comentário)
+            string lex;                                                         
+            lex.push_back(c);                                                   // adiciona o primeiro '/' 
+            lex.push_back(get());                                               // adiciona o segundo '/'
+            while (peek() != '\n' && peek() != '\0') lex.push_back(get());      // consome o resto da linha
+            return Token(TokenType::COMMENT, lex, tokLine, tokCol);             // retorna token comentário
         }
 
-        // Two-character operators: ==, !=, <=, >=
+        // Operadores booleanos(duplos): ==, !=, <=, >=
         if ((c == '=' && peek() == '=') || (c == '!' && peek() == '=') ||
             (c == '<' && peek() == '=') || (c == '>' && peek() == '=')) {
+
             string lex;
-            lex.push_back(c);
-            lex.push_back(get());
-            return Token(TokenType::OPERATOR, lex, tokLine, tokCol);
+            lex.push_back(c);                                               // adiciona o primeiro caractere
+            lex.push_back(get());                                           // adiciona o segundo caractere
+            return Token(TokenType::OPERATOR, lex, tokLine, tokCol);        // retorna token operador
         }
 
-        // Single-char operators
-        string singleOps = "+-*/=<>%";
-        if (singleOps.find(c) != string::npos) {
-            string lex(1,c);
-            return Token(TokenType::OPERATOR, lex, tokLine, tokCol);
+        // Operadores simples: +, -, *, /, =, <, >, %
+        string singleOps = "+-*/=<>%";                                      // define os operadores simples
+
+        if (singleOps.find(c) != string::npos) {                            // se o caractere for um operador simples    
+            string lex(1,c);                                                // cria a string do operador  
+            return Token(TokenType::OPERATOR, lex, tokLine, tokCol);        // retorna token operador
         }
 
-        // Punctuation
-        string punct = "();,{}[]";
-        if (punct.find(c) != string::npos) {
-            string lex(1,c);
-            return Token(TokenType::PUNCTUATION, lex, tokLine, tokCol);
+        // Pontuação: ();,{}[]
+        string punct = "();,{}[]";                                          // define os caracteres de pontuação
+
+        if (punct.find(c) != string::npos) {                                // se o caractere for de pontuação
+            string lex(1,c);                                                // cria a string da pontuação
+            return Token(TokenType::PUNCTUATION, lex, tokLine, tokCol);     // retorna token pontuação
         }
 
-        // Unknown / unrecognized
-        string lex(1, c);
-        return Token(TokenType::UNKNOWN, lex, tokLine, tokCol);
+        // Caractere desconhecido
+        string lex(1, c);                                                   // cria a string do caractere
+        return Token(TokenType::UNKNOWN, lex, tokLine, tokCol);             // retorna token desconhecido
     }
 };
 
-int main(int argc, char** argv) {
-    if (argc < 2) {
-        cerr << "Uso: " << argv[0] << " <arquivo_fonte>\n";
+// Função para salvar tokens em um arquivo
+void saveTokensToFile(const vector<Token>& tokens, const string& filename) { 
+
+    ofstream outFile(filename);                                             
+    if (!outFile) {                                                        
+        cerr << "Não foi possível abrir o arquivo para escrita: " << filename << "\n";
+        return;
+    }
+    for (const auto& token : tokens) {           
+        outFile << token.toString() << "\n";      // escreve cada token em uma nova linha                           
+    }
+    outFile.close();
+}
+
+// Programa principal para testar o analisador lexico
+int main(int argc, char** argv) {               
+
+    if (argc < 2) {                                             // verifica se o arquivo foi passado como argumento
+        cerr << "Uso: " << argv[0] << " <arquivo_fonte>\n";     // se não, exibe mensagem de uso
         return 1;
     }
-    ifstream f(argv[1]);
-    if (!f) {
-        cerr << "Não foi possível abrir: " << argv[1] << "\n";
+
+    ifstream file(argv[1]);                                     // abre o arquivo fonte
+    if (!file) {                                                // verifica se o arquivo foi aberto com sucesso
+        cerr << "Não foi possível abrir: " << argv[1] << "\n";  // se não foi possivel abrir, exibe mensagem de erro
         return 1;
     }
-    stringstream ss;
-    ss << f.rdbuf();
-    Lexer lexer(ss.str());
-    auto tokens = lexer.tokenize();
-    for (const auto &t : tokens) {
-        cout << t.toString() << "\n";
+
+    stringstream ss;                                            // cria um stringstream
+    ss << file.rdbuf();                                         // lê todo o conteúdo do arquivo para o stringstream
+    
+    Lexer lexer(ss.str());                                      // cria o analisador léxico com o conteúdo do arquivo  
+    auto tokens = lexer.tokenize();                             // tokeniza o conteúdo
+    for (const auto &t : tokens) {                              // para cada token encontrado
+        cout << t.toString() << "\n";                           // exibe o token
     }
+
+    saveTokensToFile(tokens, "tokens.txt");                     // salva os tokens em um arquivo
     return 0;
 }

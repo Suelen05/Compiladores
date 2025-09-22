@@ -16,16 +16,14 @@ Implementar um analisador léxico funcional com suporte a identificadores ✔️
 
 Explicar decisões técnicas e dificuldades encontradas no processo de implementação.
 
-> escolher os tokens
-
 Desenvolver habilidades de comunicação.
 
 Os alunos devem construir um analisador léxico simples para uma mini linguagem de programação. Esse analisador deve reconhecer os seguintes elementos básicos:
 
-- **Identificadores:** nomes de variáveis ou funções .
+- **Identificadores:** nomes de variáveis ou funções ✔️.
 - **Números:** inteiros ou decimais ✔️.
 - **Palavras-chave:** como `if`, `else`, `while` ✔️.
-- **Operadores:** como `+`, `-`, `*`, `/`, `=`.
+- **Operadores:** como `+`, `-`, `*`, `/`, `=` ✔️.
 - **Strings literais:** textos entre aspas, como "Olá mundo" ✔️.
 
 A implementação será dividida em cinco etapas. O objetivo é não apenas programar, mas também explicar o raciocínio utilizado, documentando o processo em slides e vídeo.
@@ -86,7 +84,8 @@ for tipo, padrao in tokens:
         print(tipo, "->", m.group())
 
 ```
-``` bash 
+
+``` bash
 
 # Saída do Programa
 ID   -> x
