@@ -164,24 +164,24 @@ Detectar erros como “Olá mundo (string sem aspas finais).
 
 - **PPT da apresentação** com explicações, trechos de código e resultados.
 - **Vídeo explicativo** (2–5 minutos) mostrando o programa rodando e narrando o processo.
-- **Código-fonte completo** na linguagem escolhida.
-- **Arquivos de entrada de teste**.
-- **Relatório simples** com:
-  - Tabela de cadeias (Etapa 1).
-  - Prints das saídas dos testes.
-  - Diferença entre reconhecer if como palavra-chave ou identificador.
-  - Comentários sobre modularização e estados.
+- **Código-fonte completo** na linguagem escolhida. ✔
+- **Arquivos de entrada de teste**. ✔
+- **Relatório simples** com: ✔
+  - Tabela de cadeias (Etapa 1). ✔
+  - Prints das saídas dos testes. ✔
+  - Diferença entre reconhecer if como palavra-chave ou identificador. ✔
+  - Comentários sobre modularização e estados. ✔
 
 ---
 
 # Task List
 
-[ ] Etapa 1 – Identificação de Tokens com Expressões Regulares
+[x] Etapa 1 – Identificação de Tokens com Expressões Regulares
 
-[ ] Etapa 2 – Scanner Simples com Retorno de Inteiros
+[x] Etapa 2 – Scanner Simples com Retorno de Inteiros
 
-[ ] Etapa 3 – Classe Token com Informações Detalhadas
+[x] Etapa 3 – Classe Token com Informações Detalhadas
 
 [ ] Etapa 4 – Uso de Macros e Modularização
 
-[ ] Etapa 5 – Reconhecimento de Strings Literais com Estados
+[x] Etapa 5 – Reconhecimento de Strings Literais com Estados

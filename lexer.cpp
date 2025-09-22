@@ -184,7 +184,7 @@ public:
             lex.push_back(c);               // adiciona o caractere inicial
             
             while (isIdentifierPart(peek())) lex.push_back(get());          // consome o resto do identificador
-                                         
+            
             if (keywords.count(lex)) {                                      // se for palavra-chave
                 return Token(TokenType::KEYWORD, lex, tokLine, tokCol);     // retorna token keyword
             }
