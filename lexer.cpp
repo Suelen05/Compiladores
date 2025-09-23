@@ -98,7 +98,6 @@ unordered_set<string> keywords = {
     char peek(size_t k=0) const { 
         if (i + k >= src.size()) return '\0';   // se passou do fim, retorna NULL
         return src.at(i + k);                   // retorna o caractere atual + k
-
     }
 
     // Consome o próximo caractere e avança o indice

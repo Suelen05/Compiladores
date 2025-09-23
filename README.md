@@ -44,6 +44,7 @@ Para executar o analisador léxico em um arquivo de entrada (ex.: `exemplo.src`)
 
 ``` bash
 .
+├── entregaveis      # Pasta contendo os arquivos para a avaliação do professor
 ├── lexer.cpp        # Código-fonte principal do analisador
 ├── Makefile         # Arquivo de build (para uso com nmake)
 ├── exemplo.src      # Arquivo de teste com código exemplo

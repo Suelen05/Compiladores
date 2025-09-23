@@ -8,11 +8,11 @@ A atividade não é apenas técnica: deve-se também explicar o processo de dese
 
 ## Competências Desenvolvidas
 
-Identificar e classificar símbolos léxicos em programas. ✔️
+Identificar e classificar símbolos léxicos em programas. ✔
 
 Utilizar expressões regulares ou regras definidas manualmente para descrever padrões léxicos.
 
-Implementar um analisador léxico funcional com suporte a identificadores ✔️, números ✔️, operadores ✔️ e strings ✔️.
+Implementar um analisador léxico funcional com suporte a identificadores ✔, números ✔, operadores ✔ e strings ✔.
 
 Explicar decisões técnicas e dificuldades encontradas no processo de implementação.
 
@@ -20,11 +20,11 @@ Desenvolver habilidades de comunicação.
 
 Os alunos devem construir um analisador léxico simples para uma mini linguagem de programação. Esse analisador deve reconhecer os seguintes elementos básicos:
 
-- **Identificadores:** nomes de variáveis ou funções ✔️.
-- **Números:** inteiros ou decimais ✔️.
-- **Palavras-chave:** como `if`, `else`, `while` ✔️.
-- **Operadores:** como `+`, `-`, `*`, `/`, `=` ✔️.
-- **Strings literais:** textos entre aspas, como "Olá mundo" ✔️.
+- **Identificadores:** nomes de variáveis ou funções ✔.
+- **Números:** inteiros ou decimais ✔.
+- **Palavras-chave:** como `if`, `else`, `while` ✔.
+- **Operadores:** como `+`, `-`, `*`, `/`, `=` ✔.
+- **Strings literais:** textos entre aspas, como "Olá mundo" ✔.
 
 A implementação será dividida em cinco etapas. O objetivo é não apenas programar, mas também explicar o raciocínio utilizado, documentando o processo em slides e vídeo.
 
@@ -162,7 +162,7 @@ Detectar erros como “Olá mundo (string sem aspas finais).
 
 # Entregáveis
 
-- **PPT da apresentação** com explicações, trechos de código e resultados.
+- **PPT da apresentação** com explicações, trechos de código e resultados. ✔
 - **Vídeo explicativo** (2–5 minutos) mostrando o programa rodando e narrando o processo.
 - **Código-fonte completo** na linguagem escolhida. ✔
 - **Arquivos de entrada de teste**. ✔
@@ -176,12 +176,12 @@ Detectar erros como “Olá mundo (string sem aspas finais).
 
 # Task List
 
-[x] Etapa 1 – Identificação de Tokens com Expressões Regulares
+- [x] Etapa 1 – Identificação de Tokens com Expressões Regulares
 
-[x] Etapa 2 – Scanner Simples com Retorno de Inteiros
+- [x] Etapa 2 – Scanner Simples com Retorno de Inteiros
 
-[x] Etapa 3 – Classe Token com Informações Detalhadas
+- [x] Etapa 3 – Classe Token com Informações Detalhadas
 
-[ ] Etapa 4 – Uso de Macros e Modularização
+- [ ] Etapa 4 – Uso de Macros e Modularização
 
-[x] Etapa 5 – Reconhecimento de Strings Literais com Estados
+- [x] Etapa 5 – Reconhecimento de Strings Literais com Estados
