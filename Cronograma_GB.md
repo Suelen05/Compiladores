@@ -1,106 +1,100 @@
-# 🗓️ Cronograma – Parte 2: Análise Sintática e Semântica  
-**Período:** 03/11 a 17/11  
+# 🗓️ Cronograma – Parte 2: Análise Sintática e Semântica
+
+**Período:** 14/11 a 24/11  
 **Tempo diário:** até 1 hora por dia  
 
 ---
 
-## 📅 Semana 1 – Construção do Parser (Análise Sintática)
+## 📅 Semana 1 – Implementação da Análise Sintática
 
-### **03/11 – Planejamento da Gramática**
-- [x] Definir a **mini linguagem** a ser suportada (declaração, atribuição, if/else, blocos).  
-- [x] Escrever a **gramática base (EBNF)**.  
-- [ ] Descrever isso no relatório.  
+### **14/11 – Revisão da Gramática**
 
-### **04/11 – Estrutura do Parser**
-- [x] Escolher o tipo de parser (**recursivo descendente** em C++).  
-- [x] Criar o arquivo `parser.cpp` e/ou a classe `Parser`.  
-- [x] Definir as funções principais:
-  - `parseProgram()`
-  - `parseStatement()`
-  - `parseExpression()`
+- [x] Relembrar a gramática definida na parte 1.  
+- [x] Ajustar ou simplificar regras se necessário (declaração, atribuição, if/else, blocos).  
+- [x] Criar arquivo base `parser.cpp` e preparar leitura de tokens vindos do léxico.  
 
-### **05/11 – Declarações e Blocos**
-- [x] Implementar:
-  - `int x;`
-  - `string s = "oi";`
-  - `{ stmt* }`
-- [ ] Criar função `expect(TokenType tipo)` para validar tokens e exibir erros.  
+### **15/11 – Estrutura do Parser**
 
-### **06/11 – Estruturas de Controle**
-- [x] Implementar:
-  - `if (expr) stmt (else stmt)?`
-  - `ID = expr;`
-- [ ] Garantir o uso correto de `;`, `(`, `)` e `{}`.  
+- [x] Implementar a classe `Parser` e funções iniciais:  
+  - `parseProgram()`  
+  - `parseStatement()`  
+  - `parseExpression()`  
+- [x] Garantir que o parser percorra a lista de tokens gerada pelo lexer.  
 
-### **07/11 – Expressões**
-- [x] Implementar a hierarquia:
+### **16/11 – Declarações e Blocos**
+
+- [ ] Implementar as regras de:  
+  - Declaração: `int x;`, `string s = "oi";`  
+  - Bloco: `{ stmt* }`  
+- [ ] Adicionar tratamento de erros com mensagens claras (ex.: “esperado ;”).  
+
+### **17/11 – Estruturas de Controle**
+
+- [x] Implementar `if` e `else`:  
+  - `if (expr) stmt (else stmt)?`  
+- [ ] Testar exemplos simples e verificar o aninhamento de blocos.  
+
+### **18/11 – Expressões**
+
+- [x] Implementar parsing de expressões com precedência:  
   - `||`, `&&`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `+`, `-`, `*`, `/`, `%`.  
-- [ ] Criar funções específicas (`parseOrExpr`, `parseAndExpr`, etc.).  
+- [x] Criar funções auxiliares (`parseOrExpr`, `parseAndExpr`, `parseRelExpr`, etc.).  
 
-### **08/11 – Testes Sintáticos**
-- [ ] Rodar testes em arquivos `.src`.  
-- [ ] Verificar se o parser reconhece programas válidos e acusa erros sintáticos corretamente.  
+### **19/11 – Testes Sintáticos**
+
+- [ ] Criar arquivos `.src` de teste com casos válidos e inválidos.  
+- [ ] Verificar se o parser reconhece a estrutura correta e acusa erros sintáticos.  
 
 ---
 
-## 🧩 Semana 2 – Análise Semântica e Apresentação
+## 📘 Semana 2 – Análise Semântica e Validação
 
-### **09/11 – Buffer / Revisão**
-- [ ] Reforçar pontos da análise sintática.  
-- [ ] Testar casos limite e ajustar mensagens de erro.  
+### **20/11 – Implementar Tabela de Símbolos**
 
-### **10/11 – Tabela de Símbolos**
-- [ ] Criar uma estrutura (ex.: `unordered_map<string, string>`) para armazenar variáveis declaradas.  
-- [ ] Adicionar escopo global (ou pilha de escopos).  
+- [ ] Criar uma tabela (`unordered_map<string, string>`) para armazenar variáveis e tipos.  
+- [ ] Ao encontrar uma declaração (`int x;`), registrar a variável e seu tipo.  
 
-### **11/11 – Checagem de Declarações**
-- [ ] Verificar se variáveis foram **declaradas antes de usar**.  
-- [ ] Registrar erros semânticos como: *“variável não declarada”*.  
+### **21/11 – Checagem de Declarações**
 
-### **12/11 – Checagem de Tipos**
-- [ ] Validar tipos em atribuições:
+- [ ] Validar se variáveis foram **declaradas antes de usar**.  
+- [ ] Gerar mensagem de erro: “variável não declarada”.  
+
+### **22/11 – Checagem de Tipos**
+
+- [ ] Validar compatibilidade de tipos em atribuições:
   - `int` ≠ `string`.  
-- [ ] Registrar erros semânticos de incompatibilidade.  
+- [ ] Registrar erros semânticos como “tipos incompatíveis em atribuição”.  
 
-### **13/11 – Casos de Teste**
-- [ ] Criar dois arquivos:
+### **23/11 – Testes de Semântica**
+
+- [ ] Criar dois arquivos:  
   - `ok.src` → código válido.  
-  - `erros.src` → código com falhas sintáticas e semânticas.  
-- [ ] Salvar prints das saídas para a apresentação.  
+  - `erros.src` → exemplos com erros de sintaxe e semântica.  
+- [ ] Verificar se as mensagens de erro são claras.  
 
 ---
 
-## 🧠 Semana 3 – Documentação e Apresentação
+## 🎤 Semana 3 – Apresentação e Finalização
 
-### **14/11 – Estrutura dos Slides**
-- [ ] Criar roteiro dos slides:
-  1. Recap da parte léxica.  
-  2. Sintaxe: fluxo geral.  
-  3. Gramática usada.  
-  4. Exemplo aceito.  
-  5. Exemplo com erro de sintaxe.  
-  6. Semântica: o que é verificado.  
-  7. Dificuldades.  
+### **24/11 – Montagem Final e Revisão**
 
-### **15/11 – Relatório**
-- [ ] Escrever seção:  
-  - *“Análise Sintática e Semântica”*  
-  - Explicar a gramática, tipo de parser e checagens semânticas.  
-
-### **16/11 – Montagem do PPT**
-- [ ] Inserir trechos de código e prints das saídas.  
-- [ ] Adicionar tópicos de conclusões e trabalhos futuros.  
-
-### **17/11 – Revisão Final e Vídeo**
-- [ ] Testar o código completo.  
-- [ ] Ensaiar e/ou gravar o vídeo da parte 2.  
-- [ ] Fazer revisão final do relatório e slides.  
+- [ ] Montar slides da **Parte 2** com:  
+  1. Recapitulando o léxico.  
+  2. Sintaxe – gramática e fluxo de análise.  
+  3. Exemplo aceito pelo parser.  
+  4. Exemplo com erro sintático.  
+  5. Semântica – tabela de símbolos e verificação de tipos.  
+  6. Dificuldades e aprendizados.  
+- [ ] Revisar o relatório.  
+- [ ] Ensaiar ou gravar o vídeo de apresentação.  
 
 ---
 
 ## 🧾 Observações
-- Cada atividade toma **no máximo 1h por dia**.  
-- As tarefas foram organizadas para permitir adiantar etapas se sobrar tempo.  
-- O foco da segunda parte é mostrar que o compilador agora:
-  1. **Compreende a estrutura (sintaxe)** do código.  
-  2. **Reconhece erros e tipos (semântica)** de forma coerente.  
+
+- Cada dia equivale a uma etapa curta de até **1 hora**.  
+- O cronograma deixa **tempo de sobra** para revisar e testar antes da entrega.  
+- O foco é mostrar a **evolução natural do compilador**:
+  1. **Léxico** → identifica os tokens.  
+  2. **Sintático** → valida a estrutura.  
+  3. **Semântico** → checa o sentido e a coerência.  
