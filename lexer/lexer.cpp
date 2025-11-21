@@ -12,8 +12,16 @@ using namespace std;
 
 // Definição dos tipos de tokens
 enum class TokenType {
-    IDENTIFIER, NUMBER, STRING, KEYWORD,
-    OPERATOR, PUNCTUATION, END_OF_FILE, UNKNOWN, COMMENT
+    IDENTIFIER, 
+    NUM_INT,
+    NUM_REAL, 
+    STRING, 
+    KEYWORD,
+    OPERATOR, 
+    PUNCTUATION, 
+    END_OF_FILE, 
+    UNKNOWN, 
+    COMMENT
 };
 
 // Estrutura dos tokens
@@ -32,7 +40,8 @@ struct Token {
         auto tt = [](TokenType t){  
             switch(t){
                 case TokenType::IDENTIFIER: return "IDENTIFICADOR"; 
-                case TokenType::NUMBER:     return "NUMERO";
+                case TokenType::NUM_INT:    return "NUM_INT";
+                case TokenType::NUM_REAL:   return "NUM_REAL";
                 case TokenType::STRING:     return "STRING";
                 case TokenType::KEYWORD:    return "KEYWORD";
                 case TokenType::OPERATOR:   return "OPERADOR";
@@ -126,16 +135,16 @@ unordered_set<string> keywords = {
 
     // identificar tipos de caracteres
     bool isIdentifierStart(char c) { 
-        return isalpha((unsigned char)c);       // letra
+        return isalpha((unsigned char)c) || c == '_';       // letra ou _
     }    
     bool isIdentifierPart(char c) { 
-        return isalnum((unsigned char)c);       // letra, numero
+        return isalnum((unsigned char)c) || c == '_';       // letra, numero, _
     }     
     bool isDigit(char c) { 
-        return isdigit((unsigned char)c);       // numero
+        return isdigit((unsigned char)c);                   // numero
     }                 
     bool isWhitespace(char c) { 
-        return c==' '||c=='\t'||c=='\n';        // espaço, tab, nova linha
+        return c==' '||c=='\t'||c=='\n';                    // espaço, tab, nova linha
     }         
 
 public:
@@ -150,7 +159,7 @@ public:
         while (true) {                                      
             Token t = nextToken();                          // pega o próximo token   
             tokens.push_back(t);                            // adiciona na lista
-            if (t.tipo == TokenType::END_OF_FILE) break;    // se for final de arquivo, ter0mina
+            if (t.tipo == TokenType::END_OF_FILE) break;    // se for final de arquivo, termina
         }
         return tokens;
     }
@@ -205,7 +214,11 @@ public:
                     lex.push_back(get());                   
                 } else break;                                   // senão termina
             }
-            return Token(TokenType::NUMBER, lex, tokLine, tokCol);  // retorna token número
+            if (hasDot) {
++               return Token(TokenType::NUM_REAL, lex, tokLine, tokCol); // retorna token número real
++           }else {
++               return Token(TokenType::NUM_INT, lex, tokLine, tokCol);  // retorna token número inteiro
+            }
         }
 
         // Strings 
