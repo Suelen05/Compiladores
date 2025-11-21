@@ -294,6 +294,23 @@ public:
     }
 };
 
++// Funções utilitárias para o pipeline
++vector<Token> tokenizeSource(const string& source) {   // tokeniza uma string fonte
++    Lexer lexer(source);
++    return lexer.tokenize();
++}
++
++vector<Token> tokenizeFile(const string& filename) {   // tokeniza um arquivo fonte
++    ifstream file(filename);
++    if (!file) {
++        throw runtime_error("Nao foi possivel abrir: " + filename); // lança exceção se não conseguir abrir o arquivo
++    }
++    stringstream ss;                                   // cria um stringstream 
++    ss << file.rdbuf();                                // lê todo o conteúdo do arquivo para o stringstream
++    return tokenizeSource(ss.str());                   // tokeniza o conteúdo lido
++}
+
+/*
 // Função para salvar tokens em um arquivo
 void saveTokensToFile(const vector<Token>& tokens, const string& filename) { 
 
@@ -334,3 +351,4 @@ int main(int argc, char** argv) {
     saveTokensToFile(tokens, "tokens.txt");                     // salva os tokens em um arquivo
     return 0;
 }
+*/
