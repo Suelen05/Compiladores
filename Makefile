@@ -1,11 +1,9 @@
-# Compilador
+# Simple build using MSVC cl
 CXX = cl
-# Flags: /EHsc habilita exceções seguras em C++
 CXXFLAGS = /EHsc
 
-# Nome do executável
-TARGET = lexer.exe
-SRC = lexer.cpp
+TARGET = microc.exe
+SRC = main/main.cpp
 
 all: $(TARGET)
 
