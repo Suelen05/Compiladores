@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "lexer.cpp"   
+#include "../lexer/lexer.cpp"   
 
 using namespace std;
 
@@ -280,7 +280,7 @@ private:
         }
     }
 
-    // primary -> IDENTIFIER | NUMBER | STRING | "(" expr ")"
+    // primary -> IDENTIFIER | NUM_INT | NUM_REAL | STRING | "(" expr ")"
     void parsePrimary() {
         // identificador
         if (checkType(TokenType::IDENTIFIER)) {
@@ -293,8 +293,8 @@ private:
             return;
         }
 
-        // literais
-        if (checkType(TokenType::NUMBER) || checkType(TokenType::STRING)) {
+        // literais numéricos e string
++        if (checkType(TokenType::NUM_INT) || checkType(TokenType::NUM_REAL) || checkType(TokenType::STRING)) {
             advance();
             return;
         }
