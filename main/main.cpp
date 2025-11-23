@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../lexer/lexer.cpp"
 #include "../parser/parser.cpp"
 
 using namespace std;

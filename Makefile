@@ -1,14 +1,14 @@
-# Simple build using MSVC cl
-CXX = cl
-CXXFLAGS = /EHsc
+# Makefile para compilar no Windows com o compilador MSVC
+CXX = cl							# Compilador C++
+CXXFLAGS = /EHsc					# Habilita tratamento de exceções em C++
 
-TARGET = microc.exe
-SRC = main/main.cpp
+TARGET = microcompilador.exe		#Nome do executável
+SRC = main/main.cpp					#Arquivos fonte
 
-all: $(TARGET)
+all: $(TARGET)		
 
 $(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) $(SRC)
+	$(CXX) $(CXXFLAGS) $(SRC)		
 
 clean:
-	del $(TARGET) *.obj
+	del $(TARGET) *.obj 			
