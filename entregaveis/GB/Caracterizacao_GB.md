@@ -65,8 +65,8 @@ Organização e Relato | Estrutura, README, slides, clareza | 1,0
 ## Checklist rápido
 
 - [ ] Compila e roda sem IDE, instruções no README.
-- [ ] `--tokens`, `--ast`, `--run` funcionando.
-- [ ] Mensagens de erro com linha, coluna e lexema.
-- [ ] Seis testes mínimos, incluindo um caso de erro léxico, sintático e semântico.
+- [x] `--tokens`, `--ast`, `--run` funcionando.
+- [x] Mensagens de erro com linha, coluna e lexema.
+- [x] Seis testes mínimos, incluindo um caso de erro léxico, sintático e semântico.
 - [ ] Slides em PDF.
   
