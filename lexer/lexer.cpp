@@ -32,6 +32,7 @@ struct Token {
     int linha;
     int coluna;
 
+    Token() : tipo(TokenType::UNKNOWN), texto(""), linha(0), coluna(0) {}
     Token(TokenType t, string l, int ln, int col)
         : tipo(t), texto(move(l)), linha(ln), coluna(col) {}
 
