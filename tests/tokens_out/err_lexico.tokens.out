@@ -1,4 +1,4 @@
-COMMENTARIO -> "// erro léxico: caractere inválido '@' em identificador" [1,1]
+COMMENTARIO -> "// erro l+®xico: caractere inv+ílido '@' em identificador" [1,1]
 KEYWORD -> "int" [2,1]
 IDENTIFICADOR -> "a" [2,5]
 PONTUACAO -> ";" [2,6]

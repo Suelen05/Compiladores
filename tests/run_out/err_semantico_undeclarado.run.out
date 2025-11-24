@@ -1,0 +1,3 @@
+[Erro semantico] variavel 'a' usada sem declarar (2,1)
+[Erro semantico] variavel 'a' usada sem declarar (4,5)
+[Erro semantico] operador '+' exige operandos numericos (4,7)
