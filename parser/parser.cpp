@@ -1,16 +1,16 @@
 // parser.cpp
-// Compiladores - Análise Sintática + AST + início de Semântica
-
+// Compiladores - Análise Sintática com AST e checagem básica de declaração/uso
 #include <iostream>
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <stdexcept>
 #include "../lexer/lexer.cpp"
 
 using namespace std;
 
-// Definição dos tipos de nós da AST
+// Tipos de nós da AST
 enum class NodeKind {
     Program,
     Block,
@@ -22,25 +22,26 @@ enum class NodeKind {
     Identifier
 };
 
-// Estrutura dos nós da AST 
+// Nó da AST
 struct ASTNode {
     NodeKind kind;
-    Token token;            // guarda o token principal (op, id ou literal)
+    Token token;                       // token principal (op, id ou literal)
     vector<shared_ptr<ASTNode>> children;
-    string value;           // lexema ou valor útil
+    string value;                      // lexema ou valor útil
 };
 
-// ===== Semântica básica =====
-struct SemanticError {
+// Erros semânticos simples coletados pelo parser (declaração/uso)
+struct ParserSemanticError {
     string message;
     int linha;
     int coluna;
 };
 
-class SemanticContext {
+// Contexto semântico simples do parser
+class ParserSemanticContext {
 public:
-    unordered_map<string, string> symbols;      // escopo global simples
-    vector<SemanticError> errors;
+    unordered_map<string, string> symbols; // escopo global simples: nome -> tipo
+    vector<ParserSemanticError> errors;
 
     // Declara uma variável
     void declare(const string& name, const string& type, int linha, int coluna) {
@@ -61,18 +62,17 @@ public:
 // Analisador Sintático
 class Parser {
 public:
-    Parser(const vector<Token>& tokens): tokens(tokens), current(0) {}
+    Parser(const vector<Token>& tokens) : tokens(tokens), current(0) {}
 
     // Parseia e retorna a raiz da AST (program)
     shared_ptr<ASTNode> parse() {
-        auto program = parseProgram();
-        return program;
+        return parseProgram();
     }
 
-    // Imprime os erros semânticos encontrados
+    // Imprime erros semânticos coletados
     void printSemanticErrors() const {
         for (auto &e : sem.errors) {
-            cerr << "[Erro semântico] " << e.message
+            cerr << "[Erro semantico] " << e.message
                  << " (" << e.linha << "," << e.coluna << ")\n";
         }
     }
@@ -80,23 +80,17 @@ public:
 private:
     const vector<Token>& tokens;
     size_t current;
-    SemanticContext sem;
+    ParserSemanticContext sem;
 
-    // ===== utilidades =====
+    // utilidades
     // Verifica se chegou ao fim dos tokens
-    bool isAtEnd() const {
-        return peek().tipo == TokenType::END_OF_FILE;
-    }
+    bool isAtEnd() const { return peek().tipo == TokenType::END_OF_FILE; }
 
     // Retorna o token atual sem consumir
-    const Token& peek() const {
-        return tokens.at(current);
-    }
+    const Token& peek() const { return tokens.at(current); }
 
     // Retorna o token anterior sem consumir
-    const Token& previous() const {
-        return tokens.at(current - 1);
-    }
+    const Token& previous() const { return tokens.at(current - 1); }
 
     // Avança para o próximo token e retorna o atual
     const Token& advance() {
@@ -104,50 +98,41 @@ private:
         return previous();
     }
 
-    // Verifica o tipo do token atual
+    // Verifica o tipo do token atual sem consumir
     bool checkType(TokenType t) const {
         if (isAtEnd()) return false;
         return peek().tipo == t;
     }
 
-    // Verifica o tipo e texto do token atual
+    // Verifica o tipo e texto do token atual sem consumir
     bool check(TokenType t, const string& text) const {
         if (isAtEnd()) return false;
         const Token& tk = peek();
         return tk.tipo == t && tk.texto == text;
     }
 
-    // Consome o token atual se corresponder ao tipo e texto
+    // Se o token atual bate com tipo e texto, avança e retorna true
     bool match(TokenType t, const string& text) {
-        if (check(t, text)) {
-            advance();
-            return true;
-        }
+        if (check(t, text)) { advance(); return true; }
         return false;
     }
 
-    // Espera que o token atual corresponda ao tipo e texto, senão lança erro
+    // Espera que o token atual bata com tipo e texto, avança; senão, erro
     void expect(TokenType t, const string& text, const string& msg) {
-        if (check(t, text)) {
-            advance();
-            return;
-        }
+        if (check(t, text)) { advance(); return; }
         error(peek(), msg);
     }
 
-    // Espera que o token atual corresponda ao tipo, senão lança erro
+    // Espera que o token atual bata com tipo, avança; senão, erro
     void expectType(TokenType t, const string& msg) {
-        if (checkType(t)) {
-            advance();
-            return;
-        }
+        if (checkType(t)) { advance(); return; }
         error(peek(), msg);
     }
 
     // Lança um erro sintático
     [[noreturn]] void error(const Token& token, const string& msg) {
         throw runtime_error(
-            "Erro sintático na linha " + to_string(token.linha) +
+            "Erro sintatico na linha " + to_string(token.linha) +
             ", coluna " + to_string(token.coluna) +
             ": " + msg + " (encontrei '" + token.texto + "')"
         );
@@ -163,213 +148,234 @@ private:
         return n;
     }
 
-    // Cria um nó binário
+    // Cria um nó binário da AST
     shared_ptr<ASTNode> makeBinary(const Token& op, shared_ptr<ASTNode> lhs, shared_ptr<ASTNode> rhs) {
         return makeNode(NodeKind::Binary, op, {lhs, rhs}, op.texto);
     }
 
     // ===== regras =====
     // program -> stmt*
-    // Retorna o nó raiz Program
-   shared_ptr<ASTNode> parseProgram() {
+    // Retorna o nó raiz da AST
+    shared_ptr<ASTNode> parseProgram() {
         vector<shared_ptr<ASTNode>> stmts;
         while (!isAtEnd()) {
-            
-            if (checkType(TokenType::COMMENT)) {    // pular comentários
-                advance();
-                continue;
-            }
-            stmts.push_back(parseStatement());  //coloca cada stmt como filho do programa
+            if (checkType(TokenType::COMMENT)) { advance(); continue; }
+            stmts.push_back(parseStatement());
         }
-        Token fake = isAtEnd() ? previous() : peek();   
+        Token fake = isAtEnd() ? previous() : peek();
         return makeNode(NodeKind::Program, fake, move(stmts), "program");
     }
 
     // stmt -> decl | ifStmt | assign | block
-    // Retorna um nó de declaração, if, atribuição ou bloco
+    // Declaração, if, atribuição ou bloco
     shared_ptr<ASTNode> parseStatement() {
         while (checkType(TokenType::COMMENT)) advance();    // pular comentários
 
-        if (check(TokenType::KEYWORD, "int")) {             // declaração
+        if (checkType(TokenType::KEYWORD) && isTypeKeyword(peek().texto)) {
             return parseDecl();
         }
-
-        if (check(TokenType::KEYWORD, "if")) {              // if
+        if (check(TokenType::KEYWORD, "if")) {
             return parseIf();
         }
-
-        if (check(TokenType::PUNCTUATION, "{")) {           // bloco
+        if (check(TokenType::PUNCTUATION, "{")) {
             return parseBlock();
         }
-
-        if (checkType(TokenType::IDENTIFIER)) {             // atribuição
+        if (checkType(TokenType::IDENTIFIER)) {
             return parseAssign();
         }
 
-        error(peek(), "declaração, if, bloco ou atribuição esperado");      // erro se não reconhecer
+        error(peek(), "declaracao, if, bloco ou atribuicao esperado");
     }
 
-    // decl -> "int" IDENTIFIER ";"   (init opcional pode ser adicionado depois)
-    // Retorna um nó de declaração
-    shared_ptr<ASTNode> parseDecl() {       // declara uma variável int
-        Token kw = advance();                // 'int'
+    // decl -> (int|float|string|bool) IDENTIFIER ( "=" expr )? ";"
+    // Declaração de variável com inicialização opcional
+    shared_ptr<ASTNode> parseDecl() {
+        Token typeTok = advance();              // tipo
+        string typeText = typeTok.texto;
+
         Token idTok = peek();
-        expectType(TokenType::IDENTIFIER, "identificador esperado após 'int'");
+        expectType(TokenType::IDENTIFIER, "identificador esperado apos '" + typeText + "'");
 
-        sem.declare(idTok.texto, "int", idTok.linha, idTok.coluna);     // registra na tabela de símbolos
+        // registrar tipo na tabela do parser
+        sem.declare(idTok.texto, typeText, idTok.linha, idTok.coluna);
 
-        expect(TokenType::PUNCTUATION, ";", "';' esperado ao final da declaração");
-        return makeNode(NodeKind::Decl, kw, { makeNode(NodeKind::Identifier, idTok) }, idTok.texto);    // nó Decl com filho Identifier
+        // filhos do nó de declaração
+        vector<shared_ptr<ASTNode>> kids;
+        kids.push_back(makeNode(NodeKind::Identifier, idTok));
+
+        // inicialização opcional
+        if (match(TokenType::OPERATOR, "=")) {
+            auto initExpr = parseExpr();
+            kids.push_back(initExpr);
+        }
+
+        expect(TokenType::PUNCTUATION, ";", "';' esperado ao final da declaracao");
+        // valor do nó = nome da variável; token do nó = token do tipo (para semântica saber o tipo)
+        auto declNode = makeNode(NodeKind::Decl, typeTok, move(kids), idTok.texto);
+        return declNode;
+    }
 
     // block -> "{" stmt* "}"
-    // Retorna um nó de bloco
-    shared_ptr<ASTNode> parseBlock() {                              // inicia um bloco
-        Token lbrace = peek();
-        expect(TokenType::PUNCTUATION, "{", "esperado '{' para iniciar bloco"); 
-        vector<shared_ptr<ASTNode>> stmts;                          // nó filho para cada stmt
-        while (!check(TokenType::PUNCTUATION, "}") && !isAtEnd()) { // enquanto não encontrar '}' ou EOF
-            stmts.push_back(parseStatement());
+    // Bloco de código
+    shared_ptr<ASTNode> parseBlock() {  
+        Token lbrace = peek();                                          // salvar token '{' para o nó
+        expect(TokenType::PUNCTUATION, "{", "esperado '{' para iniciar bloco");
+        vector<shared_ptr<ASTNode>> stmts;                              // filhos do nó bloco
+        while (!check(TokenType::PUNCTUATION, "}") && !isAtEnd()) {     // enquanto não achar '}' ou EOF
+            stmts.push_back(parseStatement());                          // parsear statements dentro do bloco
         }
-        expect(TokenType::PUNCTUATION, "}", "esperado '}' ao final do bloco");  
-        return makeNode(NodeKind::Block, lbrace, move(stmts), "block"); // nó Block com filhos stmts
+        expect(TokenType::PUNCTUATION, "}", "esperado '}' ao final do bloco");
+        return makeNode(NodeKind::Block, lbrace, move(stmts), "block"); // criar nó bloco
     }
 
     // ifStmt -> "if" "(" expr ")" stmt ("else" stmt)?
-    // Retorna um nó if
+    // Instrução condicional if-else
     shared_ptr<ASTNode> parseIf() {                                     // inicia um if
         Token ifTok = peek();
-        expect(TokenType::KEYWORD, "if", "esperado 'if'");
-        expect(TokenType::PUNCTUATION, "(", "esperado '(' após if");    // condição entre parênteses
-        auto cond = parseExpr();
-        expect(TokenType::PUNCTUATION, ")", "esperado ')' após condição do if");// fecha parênteses
-        auto thenBranch = parseStatement();
-        shared_ptr<ASTNode> elseBranch = nullptr;                       // inicializa else como nulo
-        if (match(TokenType::KEYWORD, "else")) {                        // verifica se há else
-            elseBranch = parseStatement();
+        expect(TokenType::KEYWORD, "if", "esperado 'if'");              // condição do if     
+        expect(TokenType::PUNCTUATION, "(", "esperado '(' apos if");    // abrir parêntese
+        auto cond = parseExpr();                                        // expressão condicional
+        expect(TokenType::PUNCTUATION, ")", "esperado ')' apos condicao do if");    // fechar parêntese
+        auto thenBranch = parseStatement();                             // ramo "then"
+        shared_ptr<ASTNode> elseBranch = nullptr;                       // ramo "else" opcional
+        if (match(TokenType::KEYWORD, "else")) {                        // se houver "else"
+            elseBranch = parseStatement();                              // parsear ramo "else"
         }
-        vector<shared_ptr<ASTNode>> kids = {cond, thenBranch};          // filhos: condição e ramo then
-        if (elseBranch) kids.push_back(elseBranch);                     // adiciona ramo else se existir
-        return makeNode(NodeKind::If, ifTok, move(kids), "if");
+        vector<shared_ptr<ASTNode>> kids = {cond, thenBranch};          // filhos do nó if
+        if (elseBranch) kids.push_back(elseBranch);                     // adicionar ramo else se existir
+        return makeNode(NodeKind::If, ifTok, move(kids), "if");         // criar nó if
     }
 
     // assign -> IDENTIFIER "=" expr ";"
-    // Retorna um nó de atribuição
-    shared_ptr<ASTNode> parseAssign() {
-        Token idTok = advance();                // IDENTIFIER
-        if (!sem.isDeclared(idTok.texto)) {     // verifica se foi declarado
-            sem.report("variável '" + idTok.texto + "' usada sem declarar", idTok.linha, idTok.coluna);
+    // Atribuição de valor a variável
+    shared_ptr<ASTNode> parseAssign() {                                 // inicia uma atribuição
+        Token idTok = advance();       
+        if (!sem.isDeclared(idTok.texto)) {                             // verificar se foi declarado
+            sem.report("variavel '" + idTok.texto + "' usada sem declarar", idTok.linha, idTok.coluna);
         }
-        expect(TokenType::OPERATOR, "=", "esperado '=' na atribuição"); 
-        auto expr = parseExpr();                // expressão do lado direito
-        expect(TokenType::PUNCTUATION, ";", "esperado ';' ao final da atribuição");
-        auto idNode = makeNode(NodeKind::Identifier, idTok);    // nó filho Identifier
-        return makeNode(NodeKind::Assign, idTok, {idNode, expr}, "=");// nó Assign com filhos Identifier e expressão
+        expect(TokenType::OPERATOR, "=", "esperado '=' na atribuicao");
+        auto expr = parseExpr();                                        // expressão do lado direito
+        expect(TokenType::PUNCTUATION, ";", "esperado ';' ao final da atribuicao");
+        auto idNode = makeNode(NodeKind::Identifier, idTok);            // nó do identificador
+        return makeNode(NodeKind::Assign, idTok, {idNode, expr}, "=");  // nó de atribuição
     }
 
     // ===== EXPRESSÕES =====
-    // expr -> orExpr
-    // Retorna um nó de expressão
-    shared_ptr<ASTNode> parseExpr() { return parseOr(); }   
+    
+    shared_ptr<ASTNode> parseExpr() { return parseOr(); }   // expressão lógica OR
 
     // orExpr -> andExpr ( "||" andExpr )*
-    // Retorna um nó de expressão lógica OR
-    shared_ptr<ASTNode> parseOr() {
-        auto left = parseAnd();
-        while (match(TokenType::OPERATOR, "||")) {
-            Token op = previous();
-            auto right = parseAnd();
-            left = makeBinary(op, left, right);
+    shared_ptr<ASTNode> parseOr() { 
+        auto left = parseAnd();                         // expressão lógica AND
+        while (match(TokenType::OPERATOR, "||")) {      // enquanto achar "||"
+            Token op = previous();                      // operador ||
+            auto right = parseAnd();                    // próxima expressão AND
+            left = makeBinary(op, left, right);         // criar nó binário
         }
-        return left;
+        return left;                                    // retornar expressão resultante
     }
 
     // andExpr -> equality ( "&&" equality )*
-    // Retorna um nó de expressão lógica AND
-    shared_ptr<ASTNode> parseAnd() { 
-        auto left = parseEquality();
-        while (match(TokenType::OPERATOR, "&&")) {
-            Token op = previous();
-            auto right = parseEquality();
-            left = makeBinary(op, left, right);
+    // expressão lógica AND
+    shared_ptr<ASTNode> parseAnd() {
+        auto left = parseEquality();                    // expressão de igualdade
+        while (match(TokenType::OPERATOR, "&&")) {      // enquanto achar "&&"
+            Token op = previous();                      // operador &&
+            auto right = parseEquality();               // próxima expressão de igualdade
+            left = makeBinary(op, left, right);         // criar nó binário
         }
-        return left;
+        return left;                                    // retornar expressão resultante
     }
 
     // equality -> rel (("=="|"!=") rel)*
-    // Retorna um nó de expressão de igualdade
-    shared_ptr<ASTNode> parseEquality() {   
-        auto left = parseRel();
-        while (check(TokenType::OPERATOR, "==") || check(TokenType::OPERATOR, "!=")) {
+    // expressão de igualdade
+    shared_ptr<ASTNode> parseEquality() {
+        auto left = parseRel();                         // expressão relacional
+        while (check(TokenType::OPERATOR, "==") || check(TokenType::OPERATOR, "!=")) {  // enquanto achar "==" ou "!="
             Token op = advance();
-            auto right = parseRel();
-            left = makeBinary(op, left, right);
+            auto right = parseRel();                    // próxima expressão relacional
+            left = makeBinary(op, left, right);         // criar nó binário
         }
         return left;
     }
 
     // rel -> add (("<"|">"|"<="|">=") add)*
-    // Retorna um nó de expressão relacional
-    shared_ptr<ASTNode> parseRel() {
-        auto left = parseAdd();
+    // expressão relacional
+    shared_ptr<ASTNode> parseRel() {                    // expressão relacional
+        auto left = parseAdd();                         // expressão de adição
         while (check(TokenType::OPERATOR, "<") ||
                check(TokenType::OPERATOR, ">") ||
                check(TokenType::OPERATOR, "<=") ||
                check(TokenType::OPERATOR, ">=")) {
             Token op = advance();
-            auto right = parseAdd();
-            left = makeBinary(op, left, right);
+            auto right = parseAdd();                    // próxima expressão de adição
+            left = makeBinary(op, left, right);         // criar nó binário
         }
         return left;
     }
 
     // add -> mult (("+"|"-") mult)*
-    // Retorna um nó de expressão de adição/subtração
-    shared_ptr<ASTNode> parseAdd() {
-        auto left = parseMult();
-        while (check(TokenType::OPERATOR, "+") || check(TokenType::OPERATOR, "-")) {
-            Token op = advance();
-            auto right = parseMult();
-            left = makeBinary(op, left, right);
+    // expressão de adição
+    shared_ptr<ASTNode> parseAdd() {                    // expressão de adição
+        auto left = parseMult();                        // expressão de multiplicação
+        while (check(TokenType::OPERATOR, "+") || check(TokenType::OPERATOR, "-")) {    // enquanto achar "+" ou "-"
+            Token op = advance();                       // operador + ou -    
+            auto right = parseMult();                   // próxima expressão de multiplicação
+            left = makeBinary(op, left, right);         // criar nó binário
         }
         return left;
     }
 
     // mult -> primary (("*"|"/"|"%") primary)*
-    // Retorna um nó de expressão de multiplicação/divisão/módulo
-    shared_ptr<ASTNode> parseMult() {
-        auto left = parsePrimary();
+    // expressão de multiplicação
+    shared_ptr<ASTNode> parseMult() {                   // expressão de multiplicação
+        auto left = parsePrimary();                     // expressão primária    
         while (check(TokenType::OPERATOR, "*") ||
                check(TokenType::OPERATOR, "/") ||
                check(TokenType::OPERATOR, "%")) {
-            Token op = advance();
-            auto right = parsePrimary();
-            left = makeBinary(op, left, right);
+            Token op = advance();                       // operador * / %
+            auto right = parsePrimary();                // próxima expressão primária
+            left = makeBinary(op, left, right);         // criar nó binário
         }
         return left;
     }
 
-    // primary -> IDENTIFIER | NUM_INT | NUM_REAL | STRING | "(" expr ")"
-    // Retorna um nó primário (identificador, literal ou expressão entre parênteses)
-    shared_ptr<ASTNode> parsePrimary() {
-        if (checkType(TokenType::IDENTIFIER)) {     // identificador
-            Token id = advance();
-            if (!sem.isDeclared(id.texto)) {        // verifica se foi declarado
-                sem.report("variável '" + id.texto + "' usada sem declarar", id.linha, id.coluna);
+    // primary -> IDENTIFIER | NUM_INT | NUM_REAL | STRING | BOOL | "(" expr ")"
+    // expressão primária: identificador, literal ou parêntese
+    shared_ptr<ASTNode> parsePrimary() {                // expressão primária
+        if (checkType(TokenType::IDENTIFIER)) {         // identificador
+            Token id = advance();                       // consumir identificador
+            if (!sem.isDeclared(id.texto)) {            // verificar se foi declarado
+                sem.report("variavel '" + id.texto + "' usada sem declarar", id.linha, id.coluna);
             }
-            return makeNode(NodeKind::Identifier, id);
+            return makeNode(NodeKind::Identifier, id);  // criar nó identificador
         }
 
+        // se for literal
         if (checkType(TokenType::NUM_INT) || checkType(TokenType::NUM_REAL) || checkType(TokenType::STRING)) {
-            Token lit = advance();                      // literal
-            return makeNode(NodeKind::Literal, lit); 
+            Token lit = advance();
+            return makeNode(NodeKind::Literal, lit);
         }
 
-        if (match(TokenType::PUNCTUATION, "(")) {   // expressão entre parênteses
-            auto expr = parseExpr();
-            expect(TokenType::PUNCTUATION, ")", "esperado ')' após expressão"); // fecha parênteses
-            return expr;
-       }
+        // se for booleano
+        if (check(TokenType::KEYWORD, "true") || check(TokenType::KEYWORD, "false")) {
+            Token lit = advance();
+            return makeNode(NodeKind::Literal, lit);
+        }
 
-        error(peek(), "expressão, identificador ou literal esperado");  // erro se não reconhecer
+        // se for parêntese
+        if (match(TokenType::PUNCTUATION, "(")) {
+            auto expr = parseExpr();
+            expect(TokenType::PUNCTUATION, ")", "esperado ')' apos expressao");
+            return expr;
+        }
+
+        // se nada bater, erro
+        error(peek(), "expressao, identificador ou literal esperado");
+    }
+
+    // Verifica se uma palavra-chave é um tipo válido
+    bool isTypeKeyword(const string& kw) const {
+        return kw == "int" || kw == "float" || kw == "string" || kw == "bool" || kw == "boolean";
     }
 };

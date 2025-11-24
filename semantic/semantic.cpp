@@ -39,12 +39,25 @@ static std::string typeToString(TypeKind t) {
     }
 }
 
+// Mapeia token de tipo de declaração para TypeKind
+static TypeKind mapDeclType(const Token& tok) {
+    const std::string& t = tok.texto;
+    if (t == "int") return TypeKind::INT;
+    if (t == "float" || t == "double") return TypeKind::REAL;
+    if (t == "string") return TypeKind::STRING;
+    if (t == "bool" || t == "boolean") return TypeKind::BOOL;
+    return TypeKind::UNKNOWN;
+}
+
 // Retorna o tipo de um literal baseado no token
 static TypeKind literalType(const Token& tok) {
     switch (tok.tipo) {
         case TokenType::NUM_INT:  return TypeKind::INT;
         case TokenType::NUM_REAL: return TypeKind::REAL;
         case TokenType::STRING:   return TypeKind::STRING;
+        case TokenType::KEYWORD:
+            if (tok.texto == "true" || tok.texto == "false") return TypeKind::BOOL;
+            return TypeKind::UNKNOWN;
         default:                  return TypeKind::UNKNOWN;
     }
 }
@@ -54,134 +67,166 @@ static void report(std::vector<SemanticError>& errs, const std::string& msg, con
     errs.push_back({msg, tok.linha, tok.coluna});
 }
 
-// Retorna o tipo resultante e verifica tipos em expressões 
+// Retorna o tipo resultante e verifica tipos em expressões
 static TypeKind evalExpr(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx) {
+    if (!node) return TypeKind::UNKNOWN;            // Evitar ponteiro nulo
 
-    if (!node) return TypeKind::UNKNOWN;                        // nó nulo
-
-    switch (node->kind) {                                       // tipo do nó
-
-        case NodeKind::Literal:                                 // literal
+    switch (node->kind) {                           // Tipo de nó
+        //caso literal
+        case NodeKind::Literal:
             return literalType(node->token);
 
-        case NodeKind::Identifier: {                            // identificador
-            auto it = ctx.symbols.find(node->value);            // procura na tabela de símbolos
-            if (it == ctx.symbols.end()) {                      // não declarado
+        // caso identificador
+        case NodeKind::Identifier: {
+            auto it = ctx.symbols.find(node->value);
+            if (it == ctx.symbols.end()) {
                 report(ctx.errors, "variavel '" + node->value + "' usada sem declarar", node->token);
-                return TypeKind::UNKNOWN;
+                return TypeKind::UNKNOWN;       // variável não declarada
             }
-            return it->second;                                  // retorna o tipo declarado
+            return it->second;  // retornar tipo declarado
         }
 
-        case NodeKind::Binary: {                                // expressão binária
+        // caso binário
+        case NodeKind::Binary: {
             TypeKind lt = evalExpr(node->children[0], ctx);     // tipo do operando esquerdo
             TypeKind rt = evalExpr(node->children[1], ctx);     // tipo do operando direito
-            const std::string& op = node->value;                // operador
+            const std::string& op = node->value;
 
-            auto isNumeric = [](TypeKind t) {                   // verifica se é numérico
-                return t == TypeKind::INT || t == TypeKind::REAL;
+            auto isNumeric = [](TypeKind t) {                       // verifica se é tipo numérico
+                return t == TypeKind::INT || t == TypeKind::REAL;   //retorna true se for int ou real
             };
 
-            if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {    // operadores aritméticos
-                if (!isNumeric(lt) || !isNumeric(rt)) {                             // tipos inválidos
-                    report(ctx.errors, "operador '" + op + "' exige operandos numéricos", node->token);
-                    return TypeKind::UNKNOWN;
+            //se for operador aritmético
+            if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
+                //verifica se ambos os operandos são numéricos
+                if (!isNumeric(lt) || !isNumeric(rt)) {
+                    report(ctx.errors, "operador '" + op + "' exige operandos numericos", node->token);
+                    return TypeKind::UNKNOWN;   // tipo desconhecido
                 }
-                if (op == "%" && (lt != TypeKind::INT || rt != TypeKind::INT)) {    // módulo só para int
+                //verifica se o operador % tem operandos int
+                if (op == "%" && (lt != TypeKind::INT || rt != TypeKind::INT)) {
                     report(ctx.errors, "operador '%' exige operandos int", node->token);
                 }
-                return (lt == TypeKind::REAL || rt == TypeKind::REAL) ? TypeKind::REAL : TypeKind::INT;// resultado é real se algum operando for real
+                //retorna o tipo resultante
+                return (lt == TypeKind::REAL || rt == TypeKind::REAL) ? TypeKind::REAL : TypeKind::INT;
             }
 
-            if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {   // operadores relacionais
-                if (!isNumeric(lt) || !isNumeric(rt)) {                             // tipos inválidos
-                    report(ctx.errors, "comparação '" + op + "' exige operandos numéricos", node->token);
+            //se for operador de comparação
+            if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
+                //verifica se ambos os operandos são numéricos
+                if (!isNumeric(lt) || !isNumeric(rt)) {
+                    report(ctx.errors, "comparacao '" + op + "' exige operandos numericos", node->token);
                 }
-                return TypeKind::BOOL;
+                return TypeKind::BOOL;  // tipo booleano
             }
 
-            if (op == "&&" || op == "||") {                                         // operadores lógicos
-                if (lt != TypeKind::BOOL || rt != TypeKind::BOOL) {                 // tipos inválidos
-                    report(ctx.errors, "operador lógico '" + op + "' exige operandos bool", node->token);
+            //se for operador lógico
+            if (op == "&&" || op == "||") {
+                //verifica se ambos os operandos são booleanos
+                if (lt != TypeKind::BOOL || rt != TypeKind::BOOL) {
+                    report(ctx.errors, "operador logico '" + op + "' exige operandos bool", node->token);
                 }
-                return TypeKind::BOOL;
+                return TypeKind::BOOL;  // tipo booleano
             }
 
-            return TypeKind::UNKNOWN;
+            return TypeKind::UNKNOWN;   // tipo desconhecido
         }
 
-        default:
+        default:                        // outros tipos de nó
             return TypeKind::UNKNOWN;
     }
 }
 
 // Função recursiva para checar a AST
 static void checkNode(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx) {
-    if (!node) return;
+    if (!node) return;                      // Evitar ponteiro nulo
 
-    // Verifica o nó baseado no tipo
-    switch (node->kind) {
+    switch (node->kind) {                   // Tipo de nó
+        //casos compostos
         case NodeKind::Program:
+        //caso bloco
         case NodeKind::Block:
-            for (auto& c : node->children) checkNode(c, ctx);
+            for (auto& c : node->children) checkNode(c, ctx);// verifica cada filho 
             break;
-        
-        // Declaração de variável
-        case NodeKind::Decl: {  
-            // Assumindo tipo int por enquanto
-            TypeKind declType = TypeKind::INT;      // tipo fixo para simplificação
-            const std::string& name = node->value;  // nome da variável
-            if (ctx.symbols.count(name)) {          // verifica redeclaração
-                report(ctx.errors, "variavel '" + name + "' redeclarada", node->token); 
+
+        // caso declaração
+        case NodeKind::Decl: {
+            TypeKind declType = mapDeclType(node->token);       // tipo declarado
+            const std::string& name = node->value;              // nome da variável
+            // verifica redeclaração
+            if (ctx.symbols.count(name)) {  
+                report(ctx.errors, "variavel '" + name + "' redeclarada", node->token);
             }
-            ctx.symbols[name] = declType;           // registra na tabela de símbolos
+            ctx.symbols[name] = declType;                       // adiciona ao contexto
+
+            // verifica inicialização
+            if (node->children.size() > 1) {
+                TypeKind initType = evalExpr(node->children[1], ctx);
+                // verifica compatibilidade de tipos
+                if (declType != TypeKind::UNKNOWN && initType != TypeKind::UNKNOWN && declType != initType) {
+                    bool numericCompat = (declType == TypeKind::REAL && initType == TypeKind::INT);
+                    //verifica compatibilidade numérica
+                    if (!numericCompat) {
+                        report(ctx.errors, "tipos incompativeis na inicializacao: declarado " +
+                            typeToString(declType) + ", obtido " + typeToString(initType), node->token);
+                    }
+                }
+            }
             break;
         }
 
-        // Atribuição
-        case NodeKind::Assign: {                 
-            const auto& idNode = node->children[0];         // nó Identificador
-            const std::string& name = idNode->value;        // nome da variável
-            auto it = ctx.symbols.find(name);               // procura na tabela de símbolos
-            TypeKind target = TypeKind::UNKNOWN;            // tipo alvo
-            if (it == ctx.symbols.end()) {                  // sem declaração
+        // caso atribuição
+        case NodeKind::Assign: {
+            const auto& idNode = node->children[0];             // nó do identificador
+            const std::string& name = idNode->value;
+            auto it = ctx.symbols.find(name);                   // procura na tabela de símbolos
+            TypeKind target = TypeKind::UNKNOWN;                // tipo alvo
+            // verifica se a variável foi declarada
+            if (it == ctx.symbols.end()) {
                 report(ctx.errors, "variavel '" + name + "' usada sem declarar", idNode->token);
-            } else {                                         // com declaração
+            }
+            // se declarada, obtém o tipo 
+            else {
                 target = it->second;
             }
-            TypeKind exprType = evalExpr(node->children[1], ctx);   // tipo da expressão atribuída
-            if (target != TypeKind::UNKNOWN && exprType != TypeKind::UNKNOWN && target != exprType) {// tipos incompatíveis
+            // avalia o tipo da expressão atribuída
+            TypeKind exprType = evalExpr(node->children[1], ctx);
+            // verifica compatibilidade de tipos
+            if (target != TypeKind::UNKNOWN && exprType != TypeKind::UNKNOWN && target != exprType) {
                 bool numericCompat = (target == TypeKind::REAL && exprType == TypeKind::INT);
-                if (!numericCompat) {                               // permite int para real
-                    report(ctx.errors, "tipos incompatíveis na atribuição: esperado " +
+                //verifica compatibilidade numérica
+                if (!numericCompat) {
+                    report(ctx.errors, "tipos incompativeis na atribuicao: esperado " +
                         typeToString(target) + ", obtido " + typeToString(exprType), node->token);
                 }
             }
             break;
         }
 
-        // If statement
-        case NodeKind::If: {    
-            if (!node->children.empty()) {                                              // verifica condição
+        // caso if
+        case NodeKind::If: {
+            // verifica tipo da condição
+            if (!node->children.empty()) {
                 TypeKind condType = evalExpr(node->children[0], ctx);
-                if (condType != TypeKind::BOOL && condType != TypeKind::UNKNOWN) {      // se a condição não é bool
-                    report(ctx.errors, "condição do if deve ser bool", node->children[0]->token);
+                // verifica se é booleano
+                if (condType != TypeKind::BOOL && condType != TypeKind::UNKNOWN) {
+                    report(ctx.errors, "condicao do if deve ser bool", node->children[0]->token);
                 }
             }
-            for (size_t i = 1; i < node->children.size(); ++i) {                        // verifica ramos then/else
+            // verifica os ramos then e else
+            for (size_t i = 1; i < node->children.size(); ++i) {
                 checkNode(node->children[i], ctx);
             }
             break;
         }
 
         default:
-            // outros nós já são cobertos em evalExpr quando usados
             break;
     }
 }
 
 // Função principal para checagem semântica do programa
-inline SemanticResult checkProgram(const std::shared_ptr<ASTNode>& root) {      
+inline SemanticResult checkProgram(const std::shared_ptr<ASTNode>& root) {
     SemanticResult res;
     checkNode(root, res);
     return res;
