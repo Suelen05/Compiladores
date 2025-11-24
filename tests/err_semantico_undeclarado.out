@@ -1,0 +1,14 @@
+Program : "program" [4,10]
+  Assign : "=" [2,1]
+    Identifier : "a" [2,1]
+    Literal : "1" [2,5]
+  Decl : "b" [3,1]
+    Identifier : "b" [3,5]
+  Assign : "=" [4,1]
+    Identifier : "b" [4,1]
+    Binary : "+" [4,7]
+      Identifier : "a" [4,5]
+      Literal : "2" [4,9]
+[Erro semantico] variavel 'a' usada sem declarar (2,1)
+[Erro semantico] variavel 'a' usada sem declarar (4,5)
+[Erro semantico] operador '+' exige operandos numericos (4,7)

@@ -1,0 +1,10 @@
+// caso válido: declarações e if/else simples
+int a;
+float b;
+a = 1;
+b = a + 2.5;
+if (a < b) {
+  a = a + 1;
+} else {
+  b = b - 1;
+}

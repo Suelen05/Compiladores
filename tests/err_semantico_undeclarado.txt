@@ -1,0 +1,4 @@
+// erro semântico: uso de variável não declarada
+a = 1;
+int b;
+b = a + 2;

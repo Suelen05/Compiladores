@@ -1,0 +1,3 @@
+// erro léxico: caractere inválido '@' em identificador
+int a;
+a@ = 3;

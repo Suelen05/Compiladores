@@ -1,0 +1,5 @@
+// erro semântico: atribuição de real em int
+int a;
+float b;
+a = 1.5;
+b = a + 2;

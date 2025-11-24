@@ -1,0 +1,3 @@
+// erro sintático: falta ';' na declaração
+int a
+a = 1;
