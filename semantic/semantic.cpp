@@ -1,10 +1,12 @@
 // semantic.cpp - checagem semântica básica usando a AST
+// Compiladores - Analisador Semântico
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <iostream>
 #include "../parser/parser.cpp"
 
+// Definição dos tipos de dados
 enum class TypeKind {
     INT,
     REAL,
@@ -13,17 +15,20 @@ enum class TypeKind {
     UNKNOWN
 };
 
+// Estrutura de erro semântico
 struct SemanticError {
     std::string message;
     int linha;
     int coluna;
 };
 
+// Resultado da análise semântica
 struct SemanticResult {
     std::unordered_map<std::string, TypeKind> symbols;
     std::vector<SemanticError> errors;
 };
 
+// Converte TypeKind para string
 static std::string typeToString(TypeKind t) {
     switch (t) {
         case TypeKind::INT:    return "int";
@@ -34,6 +39,7 @@ static std::string typeToString(TypeKind t) {
     }
 }
 
+// Retorna o tipo de um literal baseado no token
 static TypeKind literalType(const Token& tok) {
     switch (tok.tipo) {
         case TokenType::NUM_INT:  return TypeKind::INT;
@@ -43,57 +49,59 @@ static TypeKind literalType(const Token& tok) {
     }
 }
 
+// Registra um erro semântico
 static void report(std::vector<SemanticError>& errs, const std::string& msg, const Token& tok) {
     errs.push_back({msg, tok.linha, tok.coluna});
 }
 
-// Retorna o tipo resultante e acumula erros
-static TypeKind evalExpr(const std::shared_ptr<ASTNode>& node,
-                         SemanticResult& ctx) {
-    if (!node) return TypeKind::UNKNOWN;
+// Retorna o tipo resultante e verifica tipos em expressões 
+static TypeKind evalExpr(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx) {
 
-    switch (node->kind) {
-        case NodeKind::Literal:
+    if (!node) return TypeKind::UNKNOWN;                        // nó nulo
+
+    switch (node->kind) {                                       // tipo do nó
+
+        case NodeKind::Literal:                                 // literal
             return literalType(node->token);
 
-        case NodeKind::Identifier: {
-            auto it = ctx.symbols.find(node->value);
-            if (it == ctx.symbols.end()) {
+        case NodeKind::Identifier: {                            // identificador
+            auto it = ctx.symbols.find(node->value);            // procura na tabela de símbolos
+            if (it == ctx.symbols.end()) {                      // não declarado
                 report(ctx.errors, "variavel '" + node->value + "' usada sem declarar", node->token);
                 return TypeKind::UNKNOWN;
             }
-            return it->second;
+            return it->second;                                  // retorna o tipo declarado
         }
 
-        case NodeKind::Binary: {
-            TypeKind lt = evalExpr(node->children[0], ctx);
-            TypeKind rt = evalExpr(node->children[1], ctx);
-            const std::string& op = node->value;
+        case NodeKind::Binary: {                                // expressão binária
+            TypeKind lt = evalExpr(node->children[0], ctx);     // tipo do operando esquerdo
+            TypeKind rt = evalExpr(node->children[1], ctx);     // tipo do operando direito
+            const std::string& op = node->value;                // operador
 
-            auto isNumeric = [](TypeKind t) {
+            auto isNumeric = [](TypeKind t) {                   // verifica se é numérico
                 return t == TypeKind::INT || t == TypeKind::REAL;
             };
 
-            if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
-                if (!isNumeric(lt) || !isNumeric(rt)) {
+            if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {    // operadores aritméticos
+                if (!isNumeric(lt) || !isNumeric(rt)) {                             // tipos inválidos
                     report(ctx.errors, "operador '" + op + "' exige operandos numéricos", node->token);
                     return TypeKind::UNKNOWN;
                 }
-                if (op == "%" && (lt != TypeKind::INT || rt != TypeKind::INT)) {
+                if (op == "%" && (lt != TypeKind::INT || rt != TypeKind::INT)) {    // módulo só para int
                     report(ctx.errors, "operador '%' exige operandos int", node->token);
                 }
-                return (lt == TypeKind::REAL || rt == TypeKind::REAL) ? TypeKind::REAL : TypeKind::INT;
+                return (lt == TypeKind::REAL || rt == TypeKind::REAL) ? TypeKind::REAL : TypeKind::INT;// resultado é real se algum operando for real
             }
 
-            if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
-                if (!isNumeric(lt) || !isNumeric(rt)) {
+            if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {   // operadores relacionais
+                if (!isNumeric(lt) || !isNumeric(rt)) {                             // tipos inválidos
                     report(ctx.errors, "comparação '" + op + "' exige operandos numéricos", node->token);
                 }
                 return TypeKind::BOOL;
             }
 
-            if (op == "&&" || op == "||") {
-                if (lt != TypeKind::BOOL || rt != TypeKind::BOOL) {
+            if (op == "&&" || op == "||") {                                         // operadores lógicos
+                if (lt != TypeKind::BOOL || rt != TypeKind::BOOL) {                 // tipos inválidos
                     report(ctx.errors, "operador lógico '" + op + "' exige operandos bool", node->token);
                 }
                 return TypeKind::BOOL;
@@ -107,40 +115,44 @@ static TypeKind evalExpr(const std::shared_ptr<ASTNode>& node,
     }
 }
 
+// Função recursiva para checar a AST
 static void checkNode(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx) {
     if (!node) return;
 
+    // Verifica o nó baseado no tipo
     switch (node->kind) {
         case NodeKind::Program:
         case NodeKind::Block:
             for (auto& c : node->children) checkNode(c, ctx);
             break;
-
-        case NodeKind::Decl: {
+        
+        // Declaração de variável
+        case NodeKind::Decl: {  
             // Assumindo tipo int por enquanto
-            TypeKind declType = TypeKind::INT;
-            const std::string& name = node->value;
-            if (ctx.symbols.count(name)) {
-                report(ctx.errors, "variavel '" + name + "' redeclarada", node->token);
+            TypeKind declType = TypeKind::INT;      // tipo fixo para simplificação
+            const std::string& name = node->value;  // nome da variável
+            if (ctx.symbols.count(name)) {          // verifica redeclaração
+                report(ctx.errors, "variavel '" + name + "' redeclarada", node->token); 
             }
-            ctx.symbols[name] = declType;
+            ctx.symbols[name] = declType;           // registra na tabela de símbolos
             break;
         }
 
-        case NodeKind::Assign: {
-            const auto& idNode = node->children[0];
-            const std::string& name = idNode->value;
-            auto it = ctx.symbols.find(name);
-            TypeKind target = TypeKind::UNKNOWN;
-            if (it == ctx.symbols.end()) {
+        // Atribuição
+        case NodeKind::Assign: {                 
+            const auto& idNode = node->children[0];         // nó Identificador
+            const std::string& name = idNode->value;        // nome da variável
+            auto it = ctx.symbols.find(name);               // procura na tabela de símbolos
+            TypeKind target = TypeKind::UNKNOWN;            // tipo alvo
+            if (it == ctx.symbols.end()) {                  // sem declaração
                 report(ctx.errors, "variavel '" + name + "' usada sem declarar", idNode->token);
-            } else {
+            } else {                                         // com declaração
                 target = it->second;
             }
-            TypeKind exprType = evalExpr(node->children[1], ctx);
-            if (target != TypeKind::UNKNOWN && exprType != TypeKind::UNKNOWN && target != exprType) {
+            TypeKind exprType = evalExpr(node->children[1], ctx);   // tipo da expressão atribuída
+            if (target != TypeKind::UNKNOWN && exprType != TypeKind::UNKNOWN && target != exprType) {// tipos incompatíveis
                 bool numericCompat = (target == TypeKind::REAL && exprType == TypeKind::INT);
-                if (!numericCompat) {
+                if (!numericCompat) {                               // permite int para real
                     report(ctx.errors, "tipos incompatíveis na atribuição: esperado " +
                         typeToString(target) + ", obtido " + typeToString(exprType), node->token);
                 }
@@ -148,14 +160,15 @@ static void checkNode(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx)
             break;
         }
 
-        case NodeKind::If: {
-            if (!node->children.empty()) {
+        // If statement
+        case NodeKind::If: {    
+            if (!node->children.empty()) {                                              // verifica condição
                 TypeKind condType = evalExpr(node->children[0], ctx);
-                if (condType != TypeKind::BOOL && condType != TypeKind::UNKNOWN) {
+                if (condType != TypeKind::BOOL && condType != TypeKind::UNKNOWN) {      // se a condição não é bool
                     report(ctx.errors, "condição do if deve ser bool", node->children[0]->token);
                 }
             }
-            for (size_t i = 1; i < node->children.size(); ++i) {
+            for (size_t i = 1; i < node->children.size(); ++i) {                        // verifica ramos then/else
                 checkNode(node->children[i], ctx);
             }
             break;
@@ -167,7 +180,8 @@ static void checkNode(const std::shared_ptr<ASTNode>& node, SemanticResult& ctx)
     }
 }
 
-inline SemanticResult checkProgram(const std::shared_ptr<ASTNode>& root) {
+// Função principal para checagem semântica do programa
+inline SemanticResult checkProgram(const std::shared_ptr<ASTNode>& root) {      
     SemanticResult res;
     checkNode(root, res);
     return res;

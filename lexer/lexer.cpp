@@ -1,5 +1,6 @@
 // lexer.cpp
 // Compiladores - Analisador Léxico
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -33,8 +34,7 @@ struct Token {
     int coluna;
 
     Token() : tipo(TokenType::UNKNOWN), texto(""), linha(0), coluna(0) {}
-    Token(TokenType t, string l, int ln, int col)
-        : tipo(t), texto(move(l)), linha(ln), coluna(col) {}
+    Token(TokenType t, string l, int ln, int col): tipo(t), texto(move(l)), linha(ln), coluna(col) {}
 
     string toString() const {
         auto tt = [](TokenType t) {
@@ -64,6 +64,7 @@ class Lexer {
     int line = 1;
     int col = 1;
 
+    // Conjunto de palavras-chave
     unordered_set<string> keywords = {
         "if", "else", "while", "for", "switch", "case", "return",
         "int", "float", "string", "boolean", "void", "break",
@@ -72,11 +73,13 @@ class Lexer {
         "class", "new", "this", "super", "import", "package", "include"
     };
 
+    // espia o próximo caractere sem consumir
     char peek(size_t k = 0) const {
         if (i + k >= src.size()) return '\0';
         return src.at(i + k);
     }
 
+    // consome e retorna o próximo caractere
     char get() {
         if (i >= src.size()) return '\0';
         char c = src[i++];
@@ -89,6 +92,7 @@ class Lexer {
         return c;
     }
 
+    //classificadores de caracteres
     bool isIdentifierStart(char c) { return isalpha((unsigned char)c) || c == '_'; }
     bool isIdentifierPart(char c)  { return isalnum((unsigned char)c) || c == '_'; }
     bool isDigit(char c)           { return isdigit((unsigned char)c); }
@@ -97,6 +101,7 @@ class Lexer {
 public:
     explicit Lexer(string s) : src(move(s)) {}
 
+    // Gera a lista de tokens do código fonte
     vector<Token> tokenize() {
         vector<Token> tokens;
         while (true) {
@@ -107,6 +112,7 @@ public:
         return tokens;
     }
 
+    // Gera o próximo token
     Token nextToken() {
         while (true) {
             char c = peek();
@@ -207,11 +213,13 @@ public:
 };
 
 // Funções utilitárias para o pipeline
+// Tokeniza a fonte de uma string
 inline vector<Token> tokenizeSource(const string& source) {
     Lexer lexer(source);
     return lexer.tokenize();
 }
 
+// Tokeniza a fonte de um arquivo
 inline vector<Token> tokenizeFile(const string& filename) {
     ifstream file(filename);
     if (!file) {
