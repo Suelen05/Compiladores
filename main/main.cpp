@@ -1,8 +1,8 @@
-// main.cpp - CLI para lexer e parser (AST)
+// main.cpp - CLI para lexer, parser (AST) e semântica
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../parser/parser.cpp"
+#include "../semantic/semantic.cpp"
 
 using namespace std;
 
@@ -61,7 +61,11 @@ int main(int argc, char** argv) {
             Parser parser(tokens);
             auto ast = parser.parse();
             printAst(ast);
-            parser.printSemanticErrors();
+            auto sem = checkProgram(ast);
+            for (const auto& e : sem.errors) {
+                std::cerr << "[Erro semantico] " << e.message
+                          << " (" << e.linha << "," << e.coluna << ")\n";
+            }
             return 0;
         }
 
