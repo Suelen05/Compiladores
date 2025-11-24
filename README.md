@@ -1,105 +1,88 @@
-# 🔎 Analisador Léxico em C++
+# Microcompilador em C++
 
-## 📌 Descrição
+Projeto da disciplina de Compiladores dividido em duas etapas:
 
-Este projeto é um **analisador léxico** desenvolvido em **C++** para a disciplina de Compiladores.  
-O objetivo é reconhecer tokens básicos de uma mini linguagem de programação, tais como:
+- **GA**: analisador léxico.
+- **GB**: pipeline completo com léxico, parser (AST), checagem semântica básica e executor simples.
 
-- **Identificadores**  
-- **Palavras-chave** (`if`, `else`, `while`, `int`, `float`, `string`, `return`, etc.)  
-- **Números** (inteiros e decimais)  
-- **Strings literais** (com suporte a escapes e detecção de erro em strings não finalizadas)  
-- **Operadores** (`+`, `-`, `*`, `/`, `=`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`, etc.)  
-- **Pontuação** (`;`, `,`, `(`, `)`, `{`, `}`, `[`, `]`)  
-- **Comentários de linha** (`// ...`)  
-- **Tokens inválidos** (classificados como `UNKNOWN`)  
-
-O analisador percorre o código-fonte de entrada e gera como saída uma lista de tokens no formato:
+## Estrutura do projeto
 
 ``` bash
-TIPO -> "lexema" [linha,coluna]
+.
+├── lexer/         # Lexer (tokenizeSource/tokenizeFile)
+├── parser/        # Parser recursivo que gera AST
+├── semantic/      # Checker de tipos/declaração sobre a AST
+├── exec/          # Executor da AST (interpretação) e binários gerados
+├── main/          # CLI (microcompilador.exe) com modos --tokens/--ast/--run
+├── tests/         # Casos de teste e .out esperados
+└── entregaveis/   # Materiais das entregas GA e GB
 ```
 
-## ⚙️ Compilação e Execução
+## Como compilar (Windows, MSVC)
 
-### 1. Compilação
-
-O projeto foi compilado utilizando o **compilador `cl` do Visual Studio** e o **nmake**:
+Requer Visual Studio Build Tools e `nmake`. Use o **x64 Native Tools Command Prompt** ou rode `vcvars64.bat` antes.
 
 ```bash
 nmake
 ```
 
-Isso gera o executável `lexer.exe`.
+Saída: `exec\microcompilador.exe` e objetos em `exec\`.
 
-### Execução
-
-Para executar o analisador léxico em um arquivo de entrada (ex.: `exemplo.src`):
+## Como usar
 
 ```bash
-./lexer.exe exemplo.src
+# Listar tokens
+exec\microcompilador.exe --tokens caminho\arquivo.txt
+
+# Gerar AST e checar semântica (erros de variável/ti pos)
+exec\microcompilador.exe --ast caminho\arquivo.txt
+
+# Executar (só roda se semântica passar) e imprime valores finais
+exec\microcompilador.exe --run caminho\arquivo.txt
 ```
 
-## 📂 Estrutura do Projeto
+### Exemplos rápidos
 
-``` bash
-.
-├── entregaveis      # Pasta contendo os arquivos para a avaliação do professor
-├── lexer.cpp        # Código-fonte principal do analisador
-├── Makefile         # Arquivo de build (para uso com nmake)
-├── exemplo.src      # Arquivo de teste com código exemplo
-└── README.md        # Documentação do projeto
-
+```bash
+exec\microcompilador.exe --tokens tests\err_lexico.txt
+exec\microcompilador.exe --ast tests\ok_basico.txt
+exec\microcompilador.exe --run tests\ok_basico.txt
 ```
 
-## 🧪 Exemplo de Uso
+## Tipos e sintaxe suportados (GB)
 
-### Arquivo `exemplo.src`:
+- Declarações: `int`, `float`, `string`, `bool` com inicialização opcional: `int a;`, `float b = 1.5;`
+- Atribuições: `ident = expr;`
+- Controle: `if (expr) stmt (else stmt)?`
+- Blocos: `{ stmt* }`
+- Expressões: `|| && == != < > <= >= + - * / %` com precedência e parênteses.
+- Literais: inteiros, reais, strings, `true`/`false`.
 
-``` c
-// teste simples
+## Checagem semântica
 
-int main() {
-    int x = 42;
-    int num;
-    float y = 3.14;
-    string s = "Ola, mundo\n";
-    if (x > 10 && num < 20) {
-        x = x + 1;
-    } else {
-        x = x - 1;
-    }
-    // string sem fechar 
-    "oops
-    return 0;
-}
+- Variável deve ser declarada antes de usar.
+- Redeclaração acusa erro.
+- Compatibilidade em atribuição e inicialização (promove `int` → `float`; demais incompatibilidades geram erro).
+- Condição do `if` deve ser `bool`.
+- Erros emitidos com linha e coluna.
 
-```
+## Executor
 
-### Saída esperada:
+Interpreta a AST em memória:
 
-``` bash
-COMMENTARIO -> "// teste simples" [1,1]
-KEYWORD -> "int" [3,1]
-IDENTIFICADOR -> "main" [3,5]
-PONTUACAO -> "(" [3,9]
-PONTUACAO -> ")" [3,10]
-PONTUACAO -> "{" [3,12]
-KEYWORD -> "int" [4,5]
-IDENTIFICADOR -> "x" [4,9]
-OPERADOR -> "=" [4,11]
-NUMERO -> "42" [4,13]
-PONTUACAO -> ";" [4,15]
-...
-```
+- Mantém um ambiente de variáveis (tipos e valores).
+- Suporta aritmética, comparação, lógica, atribuições e `if/else`.
+- Imprime o estado final das variáveis no `--run`.
 
-## 🚀 Funcionalidades Extras
+## Testes
 
-- Detecção de strings não finalizadas, retornando token `UNKNOWN`.
-- Suporte a operadores compostos (`==`, `!=`, `<=`, `>=`, `&&`, `||`).
-- Rastreamento de linha e coluna para cada token, facilitando a depuração.
+Casos em `tests/` com entradas e saídas esperadas (.out):
 
-## 👩‍💻 Autor
+- `ok_basico`: fluxo válido com `if/else`.
+- Erros léxico, sintático e semânticos (`undeclarado`, `tipo`, `if` não bool).
+Rode os modos `--tokens`, `--ast` ou `--run` apontando para esses arquivos para validar.
 
-Trabalho desenvolvido por Suelen Fraga para a disciplina de Compiladores.
-Universidade do Vale do Rio dos Sinos (UNISINOS).
+## Entregas (GA e GB)
+
+- **GA**: entrega do analisador léxico (já incorporado em `lexer/`), com exemplos e tokens.
+- **GB**: pipeline completo (lexer + parser + semântico + executor), organização em pastas, testes e binário `microcompilador.exe`.

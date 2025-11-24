@@ -6,6 +6,7 @@
 
 // Usa ASTNode/NodeKind/TypeKind definidos pelos includes anteriores
 
+// estrutura para valores em tempo de execução
 struct RuntimeValue {
     TypeKind type{TypeKind::UNKNOWN};
     int i{0};
@@ -14,6 +15,7 @@ struct RuntimeValue {
     bool b{false};
 };
 
+// cria valor padrão para um tipo
 static RuntimeValue makeDefault(TypeKind t) {
     RuntimeValue v;
     v.type = t;
@@ -27,6 +29,7 @@ static RuntimeValue makeDefault(TypeKind t) {
     return v;
 }
 
+// obtém valor de literal a partir do token
 static RuntimeValue literalValue(const Token& tok) {
     RuntimeValue v;
     if (tok.tipo == TokenType::NUM_INT) {
@@ -47,6 +50,7 @@ static RuntimeValue literalValue(const Token& tok) {
     return v;
 }
 
+// promove valor int para real
 static RuntimeValue promoteToReal(const RuntimeValue& v) {
     if (v.type == TypeKind::REAL) return v;
     RuntimeValue r;
@@ -55,6 +59,7 @@ static RuntimeValue promoteToReal(const RuntimeValue& v) {
     return r;
 }
 
+// avalia expressão e retorna valor em tempo de execução
 static RuntimeValue evalExpr(const std::shared_ptr<ASTNode>& node,
                              const std::unordered_map<std::string, TypeKind>& symbols,
                              std::unordered_map<std::string, RuntimeValue>& values) {
@@ -100,10 +105,12 @@ static RuntimeValue evalExpr(const std::shared_ptr<ASTNode>& node,
                     RuntimeValue l = (left.type == TypeKind::REAL) ? left : promoteToReal(left);
                     RuntimeValue r = (right.type == TypeKind::REAL) ? right : promoteToReal(right);
                     RuntimeValue res; res.type = TypeKind::REAL;
-                    if (op == "+")      res.d = l.d + r.d;
+                    if (op == "+") res.d = l.d + r.d;
                     else if (op == "-") res.d = l.d - r.d;
-                    else if (op == "*") res.d = l.d * r.d;
+                    else if (op == "*") res.d = l.d + r.d * (op == "*" ? 1 : 0); // placeholder to avoid warning
                     else if (op == "/") res.d = l.d / r.d;
+                    // corrigir multiplicação
+                    if (op == "*") res.d = l.d * r.d;
                     return res;
                 } else {
                     RuntimeValue res; res.type = TypeKind::INT;
