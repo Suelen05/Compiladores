@@ -1,47 +1,38 @@
 # Microcompilador em C++
 
-Projeto da disciplina de Compiladores dividido em duas etapas:
+Projeto da disciplina de Compiladores em duas etapas:
 
-- **GA**: analisador léxico.
-- **GB**: pipeline completo com léxico, parser (AST), checagem semântica básica e executor simples.
+- **GA**: analisador léxico standalone.
+- **GB**: pipeline completo com léxico, parser (AST), checagem semântica e executor.
 
-## Estrutura do projeto
+## Estrutura
 
-``` bash
-.
-├── lexer/         # Lexer (tokenizeSource/tokenizeFile)
-├── parser/        # Parser recursivo que gera AST
-├── semantic/      # Checker de tipos/declaração sobre a AST
-├── exec/          # Executor da AST (interpretação) e binários gerados
-├── main/          # CLI (microcompilador.exe) com modos --tokens/--ast/--run
-├── tests/         # Casos de teste e .out esperados
-└── entregaveis/   # Materiais das entregas GA e GB
+```bash
+lexer/       # scanner (tokenizeSource/tokenizeFile)
+parser/      # parser recursivo que gera AST
+semantic/    # checker de tipos/declaração
+exec/        # interpretador da AST e binários gerados
+main/        # CLI (--tokens/--ast/--run)
+tests/       # entradas .txt + expected em tokens_out/ast_out/run_out + scripts
+entregaveis/ # materiais GA/GB
 ```
 
-## Como compilar (Windows, MSVC)
+## Build (Windows MSVC)
 
-Requer Visual Studio Build Tools e `nmake`. Use o **x64 Native Tools Command Prompt** ou rode `vcvars64.bat` antes.
+Use o x64 Native Tools Command Prompt ou rode `vcvars64.bat` antes.
 
 ```bash
 nmake
 ```
+Saída: `exec\microcompilador.exe` (objetos também em `exec\`).
 
-Saída: `exec\microcompilador.exe` e objetos em `exec\`.
+## CLI
 
-## Como usar
+- `--tokens <arquivo>`: imprime tokens com linha/coluna.
+- `--ast <arquivo>`: gera AST e checa semântica (declaração/uso/tipo).
+- `--run <arquivo>`: executa a AST se não houver erros e imprime valores finais das variáveis.
 
-```bash
-# Listar tokens
-exec\microcompilador.exe --tokens caminho\arquivo.txt
-
-# Gerar AST e checar semântica (erros de variável/ti pos)
-exec\microcompilador.exe --ast caminho\arquivo.txt
-
-# Executar (só roda se semântica passar) e imprime valores finais
-exec\microcompilador.exe --run caminho\arquivo.txt
-```
-
-### Exemplos rápidos
+Exemplos:
 
 ```bash
 exec\microcompilador.exe --tokens tests\err_lexico.txt
@@ -49,40 +40,39 @@ exec\microcompilador.exe --ast tests\ok_basico.txt
 exec\microcompilador.exe --run tests\ok_basico.txt
 ```
 
-## Tipos e sintaxe suportados (GB)
+## Linguagem suportada
 
-- Declarações: `int`, `float`, `string`, `bool` com inicialização opcional: `int a;`, `float b = 1.5;`
-- Atribuições: `ident = expr;`
+- Tipos: `int`, `float`, `string`, `bool`; literais `true/false`.
+- Declaração opcionalmente inicializada: `int a;`, `float b = 1.5;`.
+- Atribuição: `id = expr;`
 - Controle: `if (expr) stmt (else stmt)?`
 - Blocos: `{ stmt* }`
-- Expressões: `|| && == != < > <= >= + - * / %` com precedência e parênteses.
-- Literais: inteiros, reais, strings, `true`/`false`.
+- Expressões com precedência: `||`, `&&`, `== !=`, `< <= > >=`, `+ -`, `* / %`, parênteses.
 
-## Checagem semântica
+## Semântica
 
-- Variável deve ser declarada antes de usar.
-- Redeclaração acusa erro.
-- Compatibilidade em atribuição e inicialização (promove `int` → `float`; demais incompatibilidades geram erro).
-- Condição do `if` deve ser `bool`.
-- Erros emitidos com linha e coluna.
+- Variável deve ser declarada antes de usar; redeclaração acusa erro.
+- Compatibilidade em atribuição/inicialização (promoção `int → float` permitida; demais incompatibilidades geram erro).
+- Condição do `if` deve ser `bool`; operadores aritméticos exigem numéricos.
+- Erros reportados com linha/coluna/lexema.
 
 ## Executor
 
-Interpreta a AST em memória:
-
-- Mantém um ambiente de variáveis (tipos e valores).
-- Suporta aritmética, comparação, lógica, atribuições e `if/else`.
-- Imprime o estado final das variáveis no `--run`.
+Interpreta a AST: mantém ambiente de variáveis, avalia expressões, atribuições e `if/else`. Imprime estado final no modo `--run`.
 
 ## Testes
 
-Casos em `tests/` com entradas e saídas esperadas (.out):
+- Entradas: `tests/*.txt` (ok e casos de erro léxico/sintático/semântico).
+- Expected:
+  - `tests\tokens_out\*.tokens.out` (modo `--tokens`)
+  - `tests\ast_out\*.ast.out` (modo `--ast`)
+  - `tests\run_out\*.run.out` (modo `--run`)
+- Automação: `powershell -ExecutionPolicy Bypass -File tests\run_tests.ps1`
+  - Roda todos os modos (`--tokens`, `--ast`, `--run`) em todos os arquivos `.txt`.
+  - Compara a saída com os expected; se houver diferença, marca FAIL, grava um `.actual` ao lado do esperado e mostra um diff no resumo.
+- Comandos individuais em `tests/COMANDOS.md`.
 
-- `ok_basico`: fluxo válido com `if/else`.
-- Erros léxico, sintático e semânticos (`undeclarado`, `tipo`, `if` não bool).
-Rode os modos `--tokens`, `--ast` ou `--run` apontando para esses arquivos para validar.
+## Notas
 
-## Entregas (GA e GB)
-
-- **GA**: entrega do analisador léxico (já incorporado em `lexer/`), com exemplos e tokens.
-- **GB**: pipeline completo (lexer + parser + semântico + executor), organização em pastas, testes e binário `microcompilador.exe`.
+- Escopo simples (variáveis globais); sem laços ou funções.
+- Binário e objetos ficam em `exec\`; ajuste o `Makefile` se usar outro toolchain.
